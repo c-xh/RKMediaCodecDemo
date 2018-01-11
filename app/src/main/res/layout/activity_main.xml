@@ -24,7 +24,7 @@
                 android:orientation="vertical"
                 tools:ignore="NestedWeights">
 
-                <com.test.rtsp_4.PlayerView
+                <com.rockchip.rkmediacodecdemo.PlayerView
                     android:id="@+id/surfaceView1"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
@@ -36,7 +36,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
 
-                <com.test.rtsp_4.PlayerView
+                <com.rockchip.rkmediacodecdemo.PlayerView
                 android:id="@+id/surfaceView2"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
@@ -57,7 +57,7 @@
                 android:orientation="vertical"
                 tools:ignore="NestedWeights">
 
-                <com.test.rtsp_4.PlayerView
+                <com.rockchip.rkmediacodecdemo.PlayerView
                     android:id="@+id/surfaceView3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
@@ -69,7 +69,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
 
-                <com.test.rtsp_4.PlayerView
+                <com.rockchip.rkmediacodecdemo.PlayerView
                     android:id="@+id/surfaceView4"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />

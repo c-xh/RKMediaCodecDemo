@@ -89,10 +89,9 @@ final public class RKMediaCodec {
         /** @hide */
         @NonNull
         public BufferInfo dup() {
-            throw new RuntimeException("Not Support!");
-//            BufferInfo copy = new BufferInfo();
-//            copy.set(offset, size, presentationTimeUs, flags);
-//            return copy;
+            BufferInfo copy = new BufferInfo();
+            copy.set(offset, size, presentationTimeUs, flags);
+            return copy;
         }
     };
 
@@ -202,9 +201,9 @@ final public class RKMediaCodec {
             switch (msg.arg1) {
                 case CB_INPUT_AVAILABLE: {
                     int index = msg.arg2;
-                    synchronized (mBufferLock) {
-                        validateInputByteBuffer(mCachedInputBuffers, index);
-                    }
+//                    synchronized (mBufferLock) {
+//                        validateInputByteBuffer(mCachedInputBuffers, index);
+//                    }
                     mCallback.onInputBufferAvailable(mCodec, index);
                     break;
                 }
@@ -212,9 +211,9 @@ final public class RKMediaCodec {
                 case CB_OUTPUT_AVAILABLE: {
                     int index = msg.arg2;
                     BufferInfo info = (RKMediaCodec.BufferInfo) msg.obj;
-                    synchronized (mBufferLock) {
-                        validateOutputByteBuffer(mCachedOutputBuffers, index, info);
-                    }
+//                    synchronized (mBufferLock) {
+//                        validateOutputByteBuffer(mCachedOutputBuffers, index, info);
+//                    }
                     mCallback.onOutputBufferAvailable(mCodec, index, info);
                     break;
                 }
@@ -305,21 +304,21 @@ final public class RKMediaCodec {
     }
 
     private RKMediaCodec(@NonNull String name, boolean nameIsType, boolean encoder) {
-        throw new RuntimeException("Not Support!");
-//        Looper looper;
-//        if ((looper = Looper.myLooper()) != null) {
-//            mEventHandler = new EventHandler(this, looper);
-//        } else if ((looper = Looper.getMainLooper()) != null) {
-//            mEventHandler = new EventHandler(this, looper);
-//        } else {
-//            mEventHandler = null;
-//        }
-//        mCallbackHandler = mEventHandler;
-//        mOnFrameRenderedHandler = mEventHandler;
-//
-//        mBufferLock = new Object();
-//
-//        native_setup(name, nameIsType, encoder);
+//        throw new RuntimeException("Not Support!");
+        Looper looper;
+        if ((looper = Looper.myLooper()) != null) {
+            mEventHandler = new EventHandler(this, looper);
+        } else if ((looper = Looper.getMainLooper()) != null) {
+            mEventHandler = new EventHandler(this, looper);
+        } else {
+            mEventHandler = null;
+        }
+        mCallbackHandler = mEventHandler;
+        mOnFrameRenderedHandler = mEventHandler;
+
+        mBufferLock = new Object();
+
+        native_setup(name, nameIsType, encoder);
     }
 
     @Override
@@ -1381,63 +1380,63 @@ final public class RKMediaCodec {
     private final Map<Integer, BufferInfo> mDequeuedOutputInfos = new HashMap<Integer, BufferInfo>();
     final private Object mBufferLock;
 
-    private final void invalidateByteBuffer(@Nullable ByteBuffer[] buffers, int index) {
-        throw new RuntimeException("Not Support!");
-//        if (buffers != null && index >= 0 && index < buffers.length) {
-//            ByteBuffer buffer = buffers[index];
-//            if (buffer != null) {
-//                buffer.setAccessible(false);
-//            }
-//        }
-    }
-
-    private final void validateInputByteBuffer(@Nullable ByteBuffer[] buffers, int index) {
-        throw new RuntimeException("Not Support!");
-//        if (buffers != null && index >= 0 && index < buffers.length) {
-//            ByteBuffer buffer = buffers[index];
-//            if (buffer != null) {
-//                buffer.setAccessible(true);
-//                buffer.clear();
-//            }
-//        }
-    }
-
-    private final void revalidateByteBuffer(@Nullable ByteBuffer[] buffers, int index) {
-        throw new RuntimeException("Not Support!");
-//        synchronized(mBufferLock) {
-//            if (buffers != null && index >= 0 && index < buffers.length) {
-//                ByteBuffer buffer = buffers[index];
-//                if (buffer != null) {
-//                    buffer.setAccessible(true);
-//                }
-//            }
-//        }
-    }
-
-    private final void validateOutputByteBuffer(@Nullable ByteBuffer[] buffers, int index, @NonNull BufferInfo info) {
-        throw new RuntimeException("Not Support!");
-//        if (buffers != null && index >= 0 && index < buffers.length) {
-//            ByteBuffer buffer = buffers[index];
-//            if (buffer != null) {
-//                buffer.setAccessible(true);
-//                buffer.limit(info.offset + info.size).position(info.offset);
-//            }
-//        }
-    }
-
-    private final void invalidateByteBuffers(@Nullable ByteBuffer[] buffers) {
-        throw new RuntimeException("Not Support!");
-//        if (buffers != null) {
-//            for (ByteBuffer buffer: buffers) {
-//                if (buffer != null) {
-//                    buffer.setAccessible(false);
-//                }
-//            }
-//        }
-    }
+//    private final void invalidateByteBuffer(@Nullable ByteBuffer[] buffers, int index) {
+//        throw new RuntimeException("Not Support!");
+////        if (buffers != null && index >= 0 && index < buffers.length) {
+////            ByteBuffer buffer = buffers[index];
+////            if (buffer != null) {
+////                buffer.setAccessible(false);
+////            }
+////        }
+//    }
+//
+//    private final void validateInputByteBuffer(@Nullable ByteBuffer[] buffers, int index) {
+//        throw new RuntimeException("Not Support!");
+////        if (buffers != null && index >= 0 && index < buffers.length) {
+////            ByteBuffer buffer = buffers[index];
+////            if (buffer != null) {
+////                buffer.setAccessible(true);
+////                buffer.clear();
+////            }
+////        }
+//    }
+//
+//    private final void revalidateByteBuffer(@Nullable ByteBuffer[] buffers, int index) {
+//        throw new RuntimeException("Not Support!");
+////        synchronized(mBufferLock) {
+////            if (buffers != null && index >= 0 && index < buffers.length) {
+////                ByteBuffer buffer = buffers[index];
+////                if (buffer != null) {
+////                    buffer.setAccessible(true);
+////                }
+////            }
+////        }
+//    }
+//
+//    private final void validateOutputByteBuffer(@Nullable ByteBuffer[] buffers, int index, @NonNull BufferInfo info) {
+//        throw new RuntimeException("Not Support!");
+////        if (buffers != null && index >= 0 && index < buffers.length) {
+////            ByteBuffer buffer = buffers[index];
+////            if (buffer != null) {
+////                buffer.setAccessible(true);
+////                buffer.limit(info.offset + info.size).position(info.offset);
+////            }
+////        }
+//    }
+//
+//    private final void invalidateByteBuffers(@Nullable ByteBuffer[] buffers) {
+//        throw new RuntimeException("Not Support!");
+////        if (buffers != null) {
+////            for (ByteBuffer buffer: buffers) {
+////                if (buffer != null) {
+////                    buffer.setAccessible(false);
+////                }
+////            }
+////        }
+//    }
 
     private final void freeByteBuffer(@Nullable ByteBuffer buffer) {
-        throw new RuntimeException("Not Support!");
+//        throw new RuntimeException("Not Support!");
 //        if (buffer != null /* && buffer.isDirect() */) {
 //            // all of our ByteBuffers are direct
 //            java.nio.NioUtils.freeDirectBuffer(buffer);
@@ -1445,16 +1444,14 @@ final public class RKMediaCodec {
     }
 
     private final void freeByteBuffers(@Nullable ByteBuffer[] buffers) {
-        throw new RuntimeException("Not Support!");
-//        if (buffers != null) {
-//            for (ByteBuffer buffer: buffers) {
-//                freeByteBuffer(buffer);
-//            }
-//        }
+        if (buffers != null) {
+            for (ByteBuffer buffer: buffers) {
+                freeByteBuffer(buffer);
+            }
+        }
     }
 
     private final void freeAllTrackedBuffers() {
-//        throw new RuntimeException("Not Support!");
         synchronized(mBufferLock) {
             freeByteBuffers(mCachedInputBuffers);
             freeByteBuffers(mCachedOutputBuffers);
@@ -1921,8 +1918,7 @@ final public class RKMediaCodec {
          * @param index The index of the available output buffer.
          * @param info Info regarding the available output buffer {@link RKMediaCodec.BufferInfo}.
          */
-        public abstract void onOutputBufferAvailable(
-                @NonNull RKMediaCodec codec, int index, @NonNull BufferInfo info);
+        public abstract void onOutputBufferAvailable(@NonNull RKMediaCodec codec, int index, @NonNull BufferInfo info);
 
         /**
          * Called when the RKMediaCodec encountered an error
@@ -1938,8 +1934,7 @@ final public class RKMediaCodec {
          * @param codec The RKMediaCodec object.
          * @param format The new output format.
          */
-        public abstract void onOutputFormatChanged(
-                @NonNull RKMediaCodec codec, @NonNull MediaFormat format);
+        public abstract void onOutputFormatChanged(@NonNull RKMediaCodec codec, @NonNull MediaFormat format);
     }
 
     private void postEventFromNative(
@@ -1984,9 +1979,8 @@ final public class RKMediaCodec {
 //
 //    private static native final void native_init();
 //
-//    private native final void native_setup(
-//            @NonNull String name, boolean nameIsType, boolean encoder);
-//
+    private native final void native_setup(@NonNull String name, boolean nameIsType, boolean encoder);
+
 //    private native final void native_finalize();
 
     static {
