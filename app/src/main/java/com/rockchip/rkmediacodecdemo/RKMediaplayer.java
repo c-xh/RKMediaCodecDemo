@@ -7,10 +7,12 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
+import com.rockchip.rkmediacodec.RKMediaCodec;
 import com.rockchip.rkmediacodecdemo.rtsp.RTPConnector;
 import com.rockchip.rkmediacodecdemo.rtsp.RTSPConnector;
 
@@ -44,8 +46,8 @@ public class RKMediaplayer {
     private MediaCodec mAudioCodec = null;
     private AudioTrack mAudioTrack = null;
 
-    private ByteBuffer[] mVideoInputBuffers = null;
-    private ByteBuffer[] mVideoOutputBuffers = null;
+    //private ByteBuffer[] mVideoInputBuffers = null;
+    //private ByteBuffer[] mVideoOutputBuffers = null;
     private ByteBuffer[] mAudioInputBuffers = null;
     private ByteBuffer[] mAudioOutputBuffers = null;
 
@@ -186,8 +188,8 @@ public class RKMediaplayer {
     private void startvideo() {
         // Video
         mVideoCodec.start();
-        mVideoInputBuffers = mVideoCodec.getInputBuffers();
-        mVideoOutputBuffers = mVideoCodec.getOutputBuffers();
+        //mVideoInputBuffers = mVideoCodec.getInputBuffers();
+        //mVideoOutputBuffers = mVideoCodec.getOutputBuffers();
 
         if (DEBUG_SAVE_VIDEO_FILE) {
             try {
@@ -239,7 +241,7 @@ public class RKMediaplayer {
         mVideoDecoderHandler.post(new Runnable() {
             @Override
             public void run() {
-//                startvideo();
+                //startvideo();
                 try {
                     mRtspVideoConn = new RTSPConnector(ip, port, func);
                     mRtspVideoConn.setOnFrameListener(new RTPConnector.OnFrameListener() {
@@ -253,57 +255,45 @@ public class RKMediaplayer {
                                 }
                             }
 
-                            //if(DEBUG_QUEUE_DEQUEUE) Log.d(TAG, "dequeueInputBuffer  ing ... " + buffer.length);
+                            //Log.d(TAG, "dequeueInputBuffer  ing ... " + buffer.length);
                             int indexInputbuffer = mVideoCodec.dequeueInputBuffer(-1);
-                            //if(DEBUG_QUEUE_DEQUEUE) Log.d(TAG, "dequeueInputBuffer :" + indexInputbuffer);
+                            //Log.d(TAG, "dequeueInputBuffer :" + indexInputbuffer);
                             if (indexInputbuffer >= 0) {
-                                mVideoInputBuffers[indexInputbuffer].clear();
-                                mVideoInputBuffers[indexInputbuffer].put(buffer);
-
+                                ByteBuffer inputbuffer = mVideoCodec.getInputBuffer(indexInputbuffer);
+                                //mVideoInputBuffers[indexInputbuffer].clear();
+                                inputbuffer.put(buffer);
                                 mVideoCodec.queueInputBuffer(indexInputbuffer, 0, buffer.length, ++mVideoCount, 0);
+                            }
 
-                                //if(DEBUG_QUEUE_DEQUEUE) Log.d(TAG, "dequeueOutputBuffer  ing ... ");
-                                int indexOutputbuffer;
-                                while ((indexOutputbuffer = mVideoCodec.dequeueOutputBuffer(new MediaCodec.BufferInfo(), 0)) >= 0) {
-//                                    if(DefaultConfig.DEFAULT_DEBUG_DELAY) Log.e(DefaultConfig.TAG, "4*. after render : " + System.currentTimeMillis());
-                                    if (DEBUG_QUEUE_DEQUEUE)
-                                        Log.d(TAG, "DequeueOutputBuffer success : " + indexOutputbuffer);
-                                    if (DEBUG_QUEUE_DEQUEUE)
-                                        Log.d(TAG, " release : " + indexOutputbuffer);
-                                    mVideoCodec.releaseOutputBuffer(indexOutputbuffer, true);
-                                    ++mFrames;
-                                    long curtime = System.currentTimeMillis();
-                                    if (curtime - mLastTimestamp >= 1000) {
-                                        mFps = mFrames;
-                                        mFrames = 0;
-                                        mLastTimestamp = curtime;
-                                    }
-                                    break;
+                            int indexOutputbuffer; //= mVideoCodec.dequeueOutputBuffer(new MediaCodec.BufferInfo(), 0);
+                            //Log.d(TAG, "dequeueOutputBuffer  ing ... ");
+
+                            while ((indexOutputbuffer = mVideoCodec.dequeueOutputBuffer(new MediaCodec.BufferInfo(), 0)) >= 0) {
+                            //if (indexOutputbuffer >= 0) {
+                                //Log.d(TAG, "DequeueOutputBuffer success : " + indexOutputbuffer);
+                                mVideoCodec.releaseOutputBuffer(indexOutputbuffer, true);
+                                ++mFrames;
+                                long curtime = System.currentTimeMillis();
+                                if (curtime - mLastTimestamp >= 1000) {
+                                    mFps = mFrames;
+                                    mFrames = 0;
+                                    mLastTimestamp = curtime;
                                 }
+                                //break;
+                            }
 
-                                if (indexOutputbuffer < 0) {
-                                    switch (indexOutputbuffer) {
-                                        case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                                            if (DEBUG_QUEUE_DEQUEUE)
-                                                Log.d(TAG, " buffer changed : " + indexOutputbuffer);
-                                            mVideoOutputBuffers = mVideoCodec.getOutputBuffers();
-                                            break;
-                                        case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                                            MediaFormat format = mVideoCodec.getOutputFormat();
-                                            if (DEBUG_QUEUE_DEQUEUE)
-                                                Log.d(TAG, " format changed : " + indexOutputbuffer + " : " + format);
+                            if (indexOutputbuffer == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                                MediaFormat format = mVideoCodec.getOutputFormat();
+                                if (DEBUG_QUEUE_DEQUEUE)
+                                    Log.d(TAG, " format changed : " + indexOutputbuffer + " : " + format);
 
-                                            mVideoWidth = format.getInteger(MediaFormat.KEY_WIDTH);
-                                            mVideoHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
-                                            break;
-                                        case MediaCodec.INFO_TRY_AGAIN_LATER:
-                                            if (DEBUG_QUEUE_DEQUEUE)
-                                                Log.d(TAG, " try again later : " + indexOutputbuffer);
-                                            break;
-                                        default:
-                                            Log.d(TAG, "indexOutputbuffer = " + indexOutputbuffer);
-                                    }
-                                }
+                                mVideoWidth = format.getInteger(MediaFormat.KEY_WIDTH);
+                                mVideoHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
+                            } else if (indexOutputbuffer == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                                if (DEBUG_QUEUE_DEQUEUE)
+                                    Log.d(TAG, " try again later : " + indexOutputbuffer);
+                            } else {
+                                Log.d(TAG, "indexOutputbuffer = " + indexOutputbuffer);
                             }
                         }
                     });
