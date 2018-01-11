@@ -6,7 +6,9 @@ Java_com_rockchip_rkmediacodec_RKMediaCodec_native_1flush(JNIEnv *env, jobject i
 
     // TODO
 
-}extern "C"
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_com_rockchip_rkmediacodec_RKMediaCodec_native_1setup(JNIEnv *env, jobject instance,
                                                           jstring name_, jboolean nameIsType,
