@@ -25,7 +25,7 @@ set_target_properties(mpp PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/src
 set_target_properties(vpu PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libvpu.so)
 
 # Specifies a path to native header files.
-include_directories(src/main/cpp/mpp/)
+include_directories(src/main/jniLibs/include)
 
 find_library( # Defines the name of the path variable that stores the
               # location of the NDK library.
