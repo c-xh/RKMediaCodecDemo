@@ -6,20 +6,22 @@ extern "C" {
 JNIEXPORT void JNICALL
 Java_com_rockchip_rkmediacodec_RKMediaCodec_native_1flush(JNIEnv *env, jobject instance) {
 
-    // TODO
 
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_rockchip_rkmediacodec_RKMediaCodec_native_1create(JNIEnv *env, jobject instance,
-                                                           jstring name_, jboolean nameIsType,
-                                                           jboolean encoder) {
+                                                           jstring name_, jboolean encoder) {
     const char *name = env->GetStringUTFChars(name_, 0);
     LOGD("type name : %s", name);
     env->ReleaseStringUTFChars(name_, name);
 
     RKMpp *rkmpp = new RKMpp();
-    rkmpp->debug();
+    if (rkmpp->initCodec(name, encoder)) {
+        jclass Exception = env->FindClass("java/lang/Exception");
+        env->ThrowNew(Exception, "RKMediaCodec can't support this codec type");
+    }
+
     return (jlong)rkmpp;
 }
 
@@ -28,7 +30,7 @@ Java_com_rockchip_rkmediacodec_RKMediaCodec_native_1configure(JNIEnv *env, jobje
                                                               jlong pMpp) {
     RKMpp *rkmpp = (RKMpp*) pMpp;
     LOGD("configure ........");
-    rkmpp->debug();
+
 }
 
 JNIEXPORT jobject JNICALL
@@ -36,7 +38,7 @@ Java_com_rockchip_rkmediacodec_RKMediaCodec_native_1dequeueInputBuffer(JNIEnv *e
                                                                        jlong pMpp, jint timeoutUS) {
     RKMpp *rkmpp = (RKMpp*) pMpp;
     LOGD("dequeue input buffer ");
-    rkmpp->debug();
+
 }
 
 }

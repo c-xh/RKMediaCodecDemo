@@ -175,74 +175,24 @@ final public class RKMediaCodec {
     private boolean mHasSurface = false;
     private long mMppInstance = 0;
 
-    /**
-     * Instantiate the preferred decoder supporting input data of the given mime type.
-     *
-     * The following is a partial list of defined mime types and their semantics:
-     * <ul>
-     * <li>"video/x-vnd.on2.vp8" - VP8 video (i.e. video in .webm)
-     * <li>"video/x-vnd.on2.vp9" - VP9 video (i.e. video in .webm)
-     * <li>"video/avc" - H.264/AVC video
-     * <li>"video/hevc" - H.265/HEVC video
-     * <li>"video/mp4v-es" - MPEG4 video
-     * <li>"video/3gpp" - H.263 video
-     * <li>"audio/3gpp" - AMR narrowband audio
-     * <li>"audio/amr-wb" - AMR wideband audio
-     * <li>"audio/mpeg" - MPEG1/2 audio layer III
-     * <li>"audio/mp4a-latm" - AAC audio (note, this is raw AAC packets, not packaged in LATM!)
-     * <li>"audio/vorbis" - vorbis audio
-     * <li>"audio/g711-alaw" - G.711 alaw audio
-     * <li>"audio/g711-mlaw" - G.711 ulaw audio
-     * </ul>
-     *
-     * <strong>Note:</strong> It is preferred to use {@link MediaCodecList#findDecoderForFormat}
-     * and {@link #createByCodecName} to ensure that the resulting codec can handle a
-     * given format.
-     *
-     * @param type The mime type of the input data.
-     * @throws IOException if the codec cannot be created.
-     * @throws IllegalArgumentException if type is not a valid mime type.
-     * @throws NullPointerException if type is null.
-     */
     @NonNull
     public static RKMediaCodec createDecoderByType(@NonNull String type) throws IOException {
         if (!type.equals("video/x-vnd.on2.vp9") && !type.equals("video/avc") && !type.equals("video/hevc"))
             throw new RuntimeException("RKMediaCodec only support h264/h265/vp9");
-        return new RKMediaCodec(type, true, false);
+        return new RKMediaCodec(type, false);
     }
 
-    /**
-     * Instantiate the preferred encoder supporting output data of the given mime type.
-     *
-     * <strong>Note:</strong> It is preferred to use {@link MediaCodecList#findEncoderForFormat}
-     * and {@link #createByCodecName} to ensure that the resulting codec can handle a
-     * given format.
-     *
-     * @param type The desired mime type of the output data.
-     * @throws IOException if the codec cannot be created.
-     * @throws IllegalArgumentException if type is not a valid mime type.
-     * @throws NullPointerException if type is null.
-     */
     @NonNull
     public static RKMediaCodec createEncoderByType(@NonNull String type) throws IOException {
-        return new RKMediaCodec(type, true /* nameIsType */, true /* encoder */);
+        return new RKMediaCodec(type,true);
     }
 
-    /**
-     * If you know the exact name of the component you want to instantiate
-     * use this method to instantiate it. Use with caution.
-     * Likely to be used with information obtained from {@link MediaCodecList}
-     * @param name The name of the codec to be instantiated.
-     * @throws IOException if the codec cannot be created.
-     * @throws IllegalArgumentException if name is not valid.
-     * @throws NullPointerException if name is null.
-     */
     @NonNull
     public static RKMediaCodec createByCodecName(@NonNull String name) throws IOException {
-        return new RKMediaCodec(name, false /* nameIsType */, false /* unused */);
+        throw new RuntimeException("Not Support!");
     }
 
-    private RKMediaCodec(@NonNull String name, boolean nameIsType, boolean encoder) {
+    private RKMediaCodec(@NonNull String name, boolean encoder) {
         Looper looper;
         if ((looper = Looper.myLooper()) != null) {
             mEventHandler = new EventHandler(this, looper);
@@ -256,7 +206,7 @@ final public class RKMediaCodec {
 
         mBufferLock = new Object();
 
-        mMppInstance = native_create(name, nameIsType, encoder);
+        mMppInstance = native_create(name, encoder);
     }
 
     @Override
@@ -1893,7 +1843,7 @@ final public class RKMediaCodec {
 //
 //    private static native final void native_init();
 //
-    private native final long native_create(@NonNull String name, boolean nameIsType, boolean encoder);
+    private native final long native_create(@NonNull String name, boolean encoder);
     private native final void native_configure(long mpp_instance);
     private native final int  native_dequeueInputBuffer(long mpp_instance, long timeoutUS);
 

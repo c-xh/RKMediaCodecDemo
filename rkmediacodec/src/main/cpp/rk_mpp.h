@@ -1,7 +1,14 @@
 #include "rk_mpi.h"
+#include <string>
 
 class RKMpp {
 public:
     RKMpp();
-    void debug();
+    ~RKMpp();
+    int initCodec(std::string type, bool isEncoder);
+
+
+private:
+    MppCtx mMppCtx;
+    MppApi *mMppApi;
 };
