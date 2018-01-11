@@ -28,21 +28,9 @@ final public class RKMediaCodec {
     static {
         System.loadLibrary("native-lib");
     }
-    /**
-     * Per buffer metadata includes an offset and size specifying
-     * the range of valid data in the associated codec (output) buffer.
-     */
+
+
     public final static class BufferInfo {
-        /**
-         * Update the buffer metadata information.
-         *
-         * @param newOffset the start-offset of the data in the buffer.
-         * @param newSize   the amount of data (in bytes) in the buffer.
-         * @param newTimeUs the presentation timestamp in microseconds.
-         * @param newFlags  buffer flags associated with the buffer.  This
-         * should be a combination of  {@link #BUFFER_FLAG_KEY_FRAME} and
-         * {@link #BUFFER_FLAG_END_OF_STREAM}.
-         */
         public void set( int newOffset, int newSize, long newTimeUs, @BufferFlag int newFlags) {
             offset = newOffset;
             size = newSize;
@@ -50,39 +38,11 @@ final public class RKMediaCodec {
             flags = newFlags;
         }
 
-        /**
-         * The start-offset of the data in the buffer.
-         */
+
         public int offset;
-
-        /**
-         * The amount of data (in bytes) in the buffer.  If this is {@code 0},
-         * the buffer has no data in it and can be discarded.  The only
-         * use of a 0-size buffer is to carry the end-of-stream marker.
-         */
         public int size;
-
-        /**
-         * The presentation timestamp in microseconds for the buffer.
-         * This is derived from the presentation timestamp passed in
-         * with the corresponding input buffer.  This should be ignored for
-         * a 0-sized buffer.
-         */
         public long presentationTimeUs;
 
-        /**
-         * Buffer flags associated with the buffer.  A combination of
-         * {@link #BUFFER_FLAG_KEY_FRAME} and {@link #BUFFER_FLAG_END_OF_STREAM}.
-         *
-         *Encoded buffers that are key frames are marked with
-         * {@link #BUFFER_FLAG_KEY_FRAME}.
-         *
-         *The last output buffer corresponding to the input buffer
-         * marked with {@link #BUFFER_FLAG_END_OF_STREAM} will also be marked
-         * with {@link #BUFFER_FLAG_END_OF_STREAM}. In some cases this could
-         * be an empty buffer, whose sole purpose is to carry the end-of-stream
-         * marker.
-         */
         @BufferFlag
         public int flags;
 
@@ -93,35 +53,11 @@ final public class RKMediaCodec {
             copy.set(offset, size, presentationTimeUs, flags);
             return copy;
         }
-    };
+    }
 
-    // The follow flag constants MUST stay in sync with their equivalents
-    // in MediaCodec.h !
-
-    /**
-     * This indicates that the (encoded) buffer marked as such contains
-     * the data for a key frame.
-     *
-     * @deprecated Use {@link #BUFFER_FLAG_KEY_FRAME} instead.
-     */
     public static final int BUFFER_FLAG_SYNC_FRAME = 1;
-
-    /**
-     * This indicates that the (encoded) buffer marked as such contains
-     * the data for a key frame.
-     */
     public static final int BUFFER_FLAG_KEY_FRAME = 1;
-
-    /**
-     * This indicated that the buffer marked as such contains codec
-     * initialization / codec specific data instead of media data.
-     */
     public static final int BUFFER_FLAG_CODEC_CONFIG = 2;
-
-    /**
-     * This signals the end of stream, i.e. no buffers will be available
-     * after this, unless of course, {@link #flush} follows.
-     */
     public static final int BUFFER_FLAG_END_OF_STREAM = 4;
 
 //    /** @hide */
@@ -237,6 +173,7 @@ final public class RKMediaCodec {
     }
 
     private boolean mHasSurface = false;
+    private long mMppInstance = 0;
 
     /**
      * Instantiate the preferred decoder supporting input data of the given mime type.
@@ -269,7 +206,9 @@ final public class RKMediaCodec {
      */
     @NonNull
     public static RKMediaCodec createDecoderByType(@NonNull String type) throws IOException {
-        return new RKMediaCodec(type, true /* nameIsType */, false /* encoder */);
+        if (!type.equals("video/x-vnd.on2.vp9") && !type.equals("video/avc") && !type.equals("video/hevc"))
+            throw new RuntimeException("RKMediaCodec only support h264/h265/vp9");
+        return new RKMediaCodec(type, true, false);
     }
 
     /**
@@ -304,7 +243,6 @@ final public class RKMediaCodec {
     }
 
     private RKMediaCodec(@NonNull String name, boolean nameIsType, boolean encoder) {
-//        throw new RuntimeException("Not Support!");
         Looper looper;
         if ((looper = Looper.myLooper()) != null) {
             mEventHandler = new EventHandler(this, looper);
@@ -318,7 +256,7 @@ final public class RKMediaCodec {
 
         mBufferLock = new Object();
 
-        native_setup(name, nameIsType, encoder);
+        mMppInstance = native_create(name, nameIsType, encoder);
     }
 
     @Override
@@ -399,7 +337,7 @@ final public class RKMediaCodec {
             @Nullable MediaFormat format,
             @Nullable Surface surface, @Nullable MediaCrypto crypto,
             @ConfigureFlag int flags) {
-        throw new RuntimeException("Not Support!");
+        native_configure(mMppInstance);
 //        String[] keys = null;
 //        Object[] values = null;
 //
@@ -1045,33 +983,9 @@ final public class RKMediaCodec {
 //        }
     }
 
-//    private native final void native_queueSecureInputBuffer(
-//            int index,
-//            int offset,
-//            @NonNull CryptoInfo info,
-//            long presentationTimeUs,
-//            int flags) throws CryptoException;
 
-    /**
-     * Returns the index of an input buffer to be filled with valid data
-     * or -1 if no such buffer is currently available.
-     * This method will return immediately if timeoutUs == 0, wait indefinitely
-     * for the availability of an input buffer if timeoutUs &lt; 0 or wait up
-     * to "timeoutUs" microseconds if timeoutUs &gt; 0.
-     * @param timeoutUs The timeout in microseconds, a negative timeout indicates "infinite".
-     * @throws IllegalStateException if not in the Executing state,
-     *         or codec is configured in asynchronous mode.
-     * @throws RKMediaCodec.CodecException upon codec error.
-     */
     public final int dequeueInputBuffer(long timeoutUs) {
-        throw new RuntimeException("Not Support!");
-//        int res = native_dequeueInputBuffer(timeoutUs);
-//        if (res >= 0) {
-//            synchronized(mBufferLock) {
-//                validateInputByteBuffer(mCachedInputBuffers, res);
-//            }
-//        }
-//        return res;
+        return native_dequeueInputBuffer(mMppInstance, timeoutUs);
     }
 
 //    private native final int native_dequeueInputBuffer(long timeoutUs);
@@ -1979,14 +1893,11 @@ final public class RKMediaCodec {
 //
 //    private static native final void native_init();
 //
-    private native final void native_setup(@NonNull String name, boolean nameIsType, boolean encoder);
+    private native final long native_create(@NonNull String name, boolean nameIsType, boolean encoder);
+    private native final void native_configure(long mpp_instance);
+    private native final int  native_dequeueInputBuffer(long mpp_instance, long timeoutUS);
 
 //    private native final void native_finalize();
-
-    static {
-        System.loadLibrary("media_jni");
-//        native_init();
-    }
 
     private long mNativeContext;
 

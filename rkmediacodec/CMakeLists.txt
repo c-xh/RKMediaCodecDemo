@@ -17,15 +17,17 @@ add_library( # Specifies the name of the library.
              SHARED
 
              # Provides a relative path to your source file(s).
-             src/main/cpp/native-lib.cpp )
+             src/main/cpp/native-lib.cpp
+             src/main/cpp/rk_mpp.cpp)
 
 add_library(mpp SHARED IMPORTED)
-add_library(vpu SHARED IMPORTED)
+#add_library(vpu SHARED IMPORTED)
 set_target_properties(mpp PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libmpp.so)
-set_target_properties(vpu PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libvpu.so)
+#set_target_properties(vpu PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libvpu.so)
 
 # Specifies a path to native header files.
-include_directories(src/main/jniLibs/include)
+include_directories(src/main/jniLibs/include
+                    src/main/cpp)
 
 find_library( # Defines the name of the path variable that stores the
               # location of the NDK library.
@@ -48,4 +50,4 @@ add_library( app-glue
              ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c )
 
 # You need to link static libraries against your shared native library.
-target_link_libraries( native-lib app-glue ${log-lib} mpp vpu)
+target_link_libraries( native-lib app-glue ${log-lib} mpp )
