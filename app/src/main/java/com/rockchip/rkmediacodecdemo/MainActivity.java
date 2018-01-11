@@ -21,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
     private int RTSP_port = 554;
     private String RTSP_func2 = "video";
     private String RTSP_func = "live/av0";
+    private String RTSP_func_av1 = "live/av0";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,9 +37,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View    view) {
                 Log.d("*******", "onClick: ----------------------------------");
-                mSurfaceView.MediaPaly(RTSP_IP1, RTSP_port2, RTSP_func2);
+                mSurfaceView.MediaPaly(RTSP_IP3, RTSP_port, RTSP_func_av1);
 //                mSurfaceView.MediaPaly(RTSP_IP1,RTSP_port,RTSP_func);
-                mSurfaceView2.MediaPaly(RTSP_IP3, RTSP_port, "live/av1");
+                mSurfaceView2.MediaPaly(RTSP_IP4, RTSP_port, RTSP_func_av1);
 //                mSurfaceView2.MediaPaly(RTSP_IP2, RTSP_port, RTSP_func);
                 mSurfaceView3.MediaPaly(RTSP_IP3,RTSP_port,RTSP_func);
                 mSurfaceView4.MediaPaly(RTSP_IP4,RTSP_port,RTSP_func);
