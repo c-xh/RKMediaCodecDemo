@@ -1,4 +1,5 @@
 #include <malloc.h>
+#include <unistd.h>
 #include "rk_mpp.h"
 #include "log.h"
 
@@ -63,89 +64,118 @@ int RKMpp::initCodec(std::string type, bool isEncoder) {
 }
 
 int RKMpp::dequeueInputBuffer(long timeoutUs) {
-    MPP_RET ret = MPP_OK;
     int index = mTaskIndexCursor;
-    MppTask *task = &mInputTaskList[index];
     mTaskIndexCursor = (mTaskIndexCursor + 1) % MPP_MAX_INPUT_TASK;
-
-    ret = mMppApi->poll(mMppCtx, MPP_PORT_INPUT, MPP_POLL_BLOCK);
-    if (ret) {
-        LOGE("mpp input poll failed");
-        return ret;
-    }
-
-    mMppApi->dequeue(mMppCtx, MPP_PORT_INPUT, task);
-    LOGD("RKMpp[%p]::dequeueInputBuffer %d", this, index);
     return index;
 }
 
 void RKMpp::queueInputBuffer(int index, int offset, int size, long timeoutUs) {
-    MPP_RET ret = MPP_OK;
-    MppPacket packet = {0};
-    MppTask *task = &mInputTaskList[index];
-
-    LOGD("queue input buffer : %d is %p", index, (void*)mInputBuffers[index]);
-    mpp_packet_set_pos(packet, mInputBuffers[index] + offset);
-    mpp_packet_set_length(packet, size);
-    mpp_packet_set_eos(packet);
-
-    mpp_task_meta_set_packet(task, KEY_INPUT_PACKET, packet);
-    //mpp_task_meta_set_frame (task, KEY_OUTPUT_FRAME,  frame);
-
-    ret = mMppApi->enqueue(mMppCtx, MPP_PORT_INPUT, task);  /* input queue */
-    if (ret) {
-        LOGE("mpp task input enqueue failed");
-    }
+    this->putPacket(mInputBuffers[index] + offset, (size_t)size);
 }
 
 int RKMpp::dequeueOutputBuffer(long timeoutUs) {
+    return this->getFrame();
+}
+
+void RKMpp::putPacket(char *buf, size_t size) {
     MPP_RET ret = MPP_OK;
-    MppTask task = NULL;
+    MppPacket packet = NULL;
 
-    ret = mMppApi->poll(mMppCtx, MPP_PORT_OUTPUT, MPP_POLL_BLOCK);
+    ret = mpp_packet_init(&packet, buf, size);
     if (ret) {
-        LOGE("mpp output poll failed");
-        return -1; /* INFO_TRY_AGAIN_LATER */
+        LOGE("failed to init packet!");
+        return;
     }
 
-    ret = mMppApi->dequeue(mMppCtx, MPP_PORT_OUTPUT, &task); /* output queue */
-    if (ret) {
-        LOGE("mpp task output dequeue failed\n");
-        return -10;
+    mpp_packet_write(packet, 0, buf, size);
+    mpp_packet_set_pos(packet, buf);
+    mpp_packet_set_length(packet, size);
+
+    //LOGD("put packet %lu", size);
+    int retry_put = 0;
+    while(mMppApi->decode_put_packet(mMppCtx, packet)) {
+        //LOGD("put packet error !");
+        if(++retry_put > 30) {
+            LOGW("skip this packet !");
+            break;
+        }
+        usleep(3*1000);
     }
 
-    MppFrame  frame; // todo:: return to display
+    //LOGD("put packet left len: %lu", mpp_packet_get_length(packet));
 
-    if (task) {
-        MppFrame frame_out = NULL;
-        mpp_task_meta_get_frame(task, KEY_OUTPUT_FRAME, &frame_out);
-        //mpp_assert(packet_out == packet);
+    if (packet) {
+        mpp_packet_deinit(&packet);
+    }
+}
 
-        if (frame) {
-            /* write frame to file here */
-            MppBuffer buf_out = mpp_frame_get_buffer(frame_out);
+int RKMpp::getFrame() {
+    MPP_RET ret = MPP_OK;
+    MppFrame frame = NULL;
 
-            if (buf_out) {
-                void *ptr = mpp_buffer_get_ptr(buf_out);
-                size_t len = mpp_buffer_get_size(buf_out);
+    ret = mMppApi->decode_get_frame(mMppCtx, &frame);
+    if (MPP_OK != ret) {
+        LOGW("decode_get_frame failed ret %d\n", ret);
+        return -1;
+    }
 
-                LOGD("decoded frame size %d", len);
+    if (frame) {
+        if (mpp_frame_get_info_change(frame)) {
+            mWidth = mpp_frame_get_width(frame);
+            mHeight = mpp_frame_get_height(frame);
+            RK_U32 hor_stride = mpp_frame_get_hor_stride(frame);
+            RK_U32 ver_stride = mpp_frame_get_ver_stride(frame);
+
+            LOGD("decode_get_frame get info changed found\n");
+            LOGD("decoder require buffer w:h [%u:%u] stride [%d:%d]", mWidth, mHeight, hor_stride, ver_stride);
+
+            //mMppApi->control(mMppCtx, MPP_DEC_SET_EXT_BUF_GROUP, output_grp);
+            mMppApi->control(mMppCtx, MPP_DEC_SET_INFO_CHANGE_READY, NULL);
+        } else {
+            //RK_U32 width = mpp_frame_get_width(frame);
+            //RK_U32 height = mpp_frame_get_height(frame);
+            RK_U32 h_stride = mpp_frame_get_hor_stride(frame);
+            RK_U32 v_stride = mpp_frame_get_ver_stride(frame);
+            MppFrameFormat fmt = mpp_frame_get_fmt(frame);
+            MppBuffer buf = mpp_frame_get_buffer(frame);
+            int fd = mpp_buffer_get_fd(buf);
+            char *ptr = (char *)mpp_buffer_get_ptr(buf);
+            size_t siz = mpp_buffer_get_size(buf);
+
+            //LOGD("got frame [fd:%d] . %dx%d [%dx%d]. size: %u", fd , width, height, h_stride, v_stride, siz);
+            if (siz > 0) {
+//                PRbsBuffer rbsBuff = RbsBuffer::createWithFd(siz, nullptr, fd, ptr);
+//                BufferInfo info = {0};
+//                info.type = UNIT_DATATYPE_YUV420;
+//                info.width = h_stride;
+//                info.height = v_stride;
+//                info.pitch = h_stride;
+//                info.drm_format = DRM_FORMAT_NV12;
+//                info.timestamp = nanoTime();
+//                rbsBuff->setBufferInfo(info);
+//                rbsBuff->setValidSize(h_stride * v_stride * 3 / 2);
+
+                /// check frame error
+                int err = mpp_frame_get_errinfo(frame) | mpp_frame_get_discard(frame);
+                if (err) {
+                    //LOGW("mpp: get err info %d discard %d,go back.",
+                    //        mpp_frame_get_errinfo(frame),
+                    //        mpp_frame_get_discard(frame));
+                } else {
+                    //if(DEBUG_DECODER_DELAY) LOGD("Decoder delay: %u ms", (nanoTime() - mDelayTime)/NANOTIME_PER_MSECOND);
+                }
             }
 
-            if (mpp_frame_get_eos(frame_out))
-                LOGD("found eos frame\n");
-        }
+            //LOGD("- mpp_frame_deinit :%d", fd);
+            mpp_frame_deinit(&frame);
 
-        /* output queue */
-        ret = mMppApi->enqueue(mMppCtx, MPP_PORT_OUTPUT, task);
-        if (ret) {
-            LOGD("mpp task output enqueue failed");
-            return -11;
+            frame = NULL;
         }
     } else {
-        LOGE("task error!");
-        return -12;
+        //usleep(10 * 1000); /* 1ms */
+        LOGD("no frame !");
     }
+
     return 0;
 }
 
