@@ -42,7 +42,7 @@ public class RKMediaplayer {
     private final String DECODER_AAC = "audio/mp4a-latm";
 
     private Surface mSurface = null;
-    private MediaCodec mVideoCodec = null;
+    private RKMediaCodec mVideoCodec = null;
     private MediaCodec mAudioCodec = null;
     private AudioTrack mAudioTrack = null;
 
@@ -90,7 +90,7 @@ public class RKMediaplayer {
         mAudioDecoderHandler = new Handler(mAudioDecoderThread.getLooper());
 
         try {
-            mVideoCodec = MediaCodec.createDecoderByType(DECODER_H264);
+            mVideoCodec = RKMediaCodec.createDecoderByType(DECODER_H264);
             MediaFormat mediaFormat = new MediaFormat();
             mediaFormat.setString(MediaFormat.KEY_MIME, DECODER_H264);
             mediaFormat.setInteger(MediaFormat.KEY_WIDTH, VIDEO_WIDTH);
@@ -255,11 +255,12 @@ public class RKMediaplayer {
                                 }
                             }
 
-                            //Log.d(TAG, "dequeueInputBuffer  ing ... " + buffer.length);
+                            Log.d(TAG, "dequeueInputBuffer  ing ... " + buffer.length);
                             int indexInputbuffer = mVideoCodec.dequeueInputBuffer(-1);
                             //Log.d(TAG, "dequeueInputBuffer :" + indexInputbuffer);
                             if (indexInputbuffer >= 0) {
                                 ByteBuffer inputbuffer = mVideoCodec.getInputBuffer(indexInputbuffer);
+                                Log.d(TAG, "getinputbuffer : " + indexInputbuffer);
                                 //mVideoInputBuffers[indexInputbuffer].clear();
                                 inputbuffer.put(buffer);
                                 mVideoCodec.queueInputBuffer(indexInputbuffer, 0, buffer.length, ++mVideoCount, 0);
@@ -268,7 +269,7 @@ public class RKMediaplayer {
                             int indexOutputbuffer; //= mVideoCodec.dequeueOutputBuffer(new MediaCodec.BufferInfo(), 0);
                             //Log.d(TAG, "dequeueOutputBuffer  ing ... ");
 
-                            while ((indexOutputbuffer = mVideoCodec.dequeueOutputBuffer(new MediaCodec.BufferInfo(), 0)) >= 0) {
+                            while ((indexOutputbuffer = mVideoCodec.dequeueOutputBuffer(new RKMediaCodec.BufferInfo(), 0)) >= 0) {
                             //if (indexOutputbuffer >= 0) {
                                 //Log.d(TAG, "DequeueOutputBuffer success : " + indexOutputbuffer);
                                 mVideoCodec.releaseOutputBuffer(indexOutputbuffer, true);

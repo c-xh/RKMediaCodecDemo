@@ -13,7 +13,7 @@ public class MainActivity extends AppCompatActivity {
     private PlayerView mSurfaceView3;
     private PlayerView mSurfaceView4;
     //    private String RTSP_IP1 = "172.16.9.113";
-    private String RTSP_IP1 = "192.168.17.108";
+    private String RTSP_IP1 = "192.168.17.102";
     private String RTSP_IP2 = "192.168.17.101";
     private String RTSP_IP3 = "192.168.17.105";
     private String RTSP_IP4 = "192.168.17.106";
