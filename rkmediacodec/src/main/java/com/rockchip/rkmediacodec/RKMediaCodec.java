@@ -13,6 +13,7 @@ import android.os.Message;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.Surface;
 
 import java.io.IOException;
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 final public class RKMediaCodec {
+    final private static String TAG = "RKMediaCodec";
 
     static {
         System.loadLibrary("native-lib");
@@ -287,7 +289,7 @@ final public class RKMediaCodec {
             @Nullable MediaFormat format,
             @Nullable Surface surface, @Nullable MediaCrypto crypto,
             @ConfigureFlag int flags) {
-        native_configure(mMppInstance);
+        //native_configure(mMppInstance);
 //        String[] keys = null;
 //        Object[] values = null;
 //
@@ -432,11 +434,10 @@ final public class RKMediaCodec {
      * for start may be attributed to future method calls.
      */
     public final void start() {
-        throw new RuntimeException("Not Support!");
 //        native_start();
 //        synchronized(mBufferLock) {
-//            cacheBuffers(true /* input */);
-//            cacheBuffers(false /* input */);
+            //cacheBuffers(true /* input */);
+            //cacheBuffers(false /* input */);
 //        }
     }
 //    private native final void native_start();
@@ -659,79 +660,11 @@ final public class RKMediaCodec {
         private int mErrorCode;
     }
 
-    /**
-     * After filling a range of the input buffer at the specified index
-     * submit it to the component. Once an input buffer is queued to
-     * the codec, it MUST NOT be used until it is later retrieved by
-     * {@link #getInputBuffer} in response to a {@link #dequeueInputBuffer}
-     * return value or a {@link Callback#onInputBufferAvailable}
-     * callback.
-     *
-     * Many decoders require the actual compressed data stream to be
-     * preceded by "codec specific data", i.e. setup data used to initialize
-     * the codec such as PPS/SPS in the case of AVC video or code tables
-     * in the case of vorbis audio.
-     * The class {@link android.media.MediaExtractor} provides codec
-     * specific data as part of
-     * the returned track format in entries named "csd-0", "csd-1" ...
-     *
-     * These buffers can be submitted directly after {@link #start} or
-     * {@link #flush} by specifying the flag {@link
-     * #BUFFER_FLAG_CODEC_CONFIG}.  However, if you configure the
-     * codec with a {@link MediaFormat} containing these keys, they
-     * will be automatically submitted by RKMediaCodec directly after
-     * start.  Therefore, the use of {@link
-     * #BUFFER_FLAG_CODEC_CONFIG} flag is discouraged and is
-     * recommended only for advanced users.
-     *
-     * To indicate that this is the final piece of input data (or rather that
-     * no more input data follows unless the decoder is subsequently flushed)
-     * specify the flag {@link #BUFFER_FLAG_END_OF_STREAM}.
-     * <p class=note>
-     * <strong>Note:</strong> Prior to {@link android.os.Build.VERSION_CODES#M},
-     * {@code presentationTimeUs} was not propagated to the frame timestamp of (rendered)
-     * Surface output buffers, and the resulting frame timestamp was undefined.
-     * Use {@link #releaseOutputBuffer(int, long)} to ensure a specific frame timestamp is set.
-     * Similarly, since frame timestamps can be used by the destination surface for rendering
-     * synchronization, <strong>care must be taken to normalize presentationTimeUs so as to not be
-     * mistaken for a system time. (See {@linkplain #releaseOutputBuffer(int, long)
-     * SurfaceView specifics}).</strong>
-     *
-     * @param index The index of a client-owned input buffer previously returned
-     *              in a call to {@link #dequeueInputBuffer}.
-     * @param offset The byte offset into the input buffer at which the data starts.
-     * @param size The number of bytes of valid input data.
-     * @param presentationTimeUs The presentation timestamp in microseconds for this
-     *                           buffer. This is normally the media time at which this
-     *                           buffer should be presented (rendered). When using an output
-     *                           surface, this will be propagated as the {@link
-     *                           SurfaceTexture#getTimestamp timestamp} for the frame (after
-     *                           conversion to nanoseconds).
-     * @param flags A bitmask of flags
-     *              {@link #BUFFER_FLAG_CODEC_CONFIG} and {@link #BUFFER_FLAG_END_OF_STREAM}.
-     *              While not prohibited, most codecs do not use the
-     *              {@link #BUFFER_FLAG_KEY_FRAME} flag for input buffers.
-     * @throws IllegalStateException if not in the Executing state.
-     * @throws RKMediaCodec.CodecException upon codec error.
-     * @throws CryptoException if a crypto object has been specified in
-     *         {@link #configure}
-     */
     public final void queueInputBuffer(
             int index,
             int offset, int size, long presentationTimeUs, int flags)
             throws CryptoException {
-        throw new RuntimeException("Not Support!");
-//        synchronized (mBufferLock) {
-//            invalidateByteBuffer(mCachedInputBuffers, index);
-//            mDequeuedInputBuffers.remove(index);
-//        }
-//        try {
-//            native_queueInputBuffer(
-//                    index, offset, size, presentationTimeUs, flags);
-//        } catch (CryptoException | IllegalStateException e) {
-//            revalidateByteBuffer(mCachedInputBuffers, index);
-//            throw e;
-//        }
+        native_queueInputBuffer(mMppInstance, index, offset, size, presentationTimeUs, flags);
     }
 
 //    private native final void native_queueInputBuffer(
@@ -992,19 +925,15 @@ final public class RKMediaCodec {
     @OutputBufferInfo
     public final int dequeueOutputBuffer(
             @NonNull BufferInfo info, long timeoutUs) {
-        throw new RuntimeException("Not Support!");
-//        int res = native_dequeueOutputBuffer(info, timeoutUs);
+        int res = native_dequeueOutputBuffer(mMppInstance, timeoutUs);
 //        synchronized(mBufferLock) {
 //            if (res == INFO_OUTPUT_BUFFERS_CHANGED) {
-//                cacheBuffers(false /* input */);
+//
 //            } else if (res >= 0) {
-//                validateOutputByteBuffer(mCachedOutputBuffers, res, info);
-//                if (mHasSurface) {
-//                    mDequeuedOutputInfos.put(res, info.dup());
-//                }
+//                // todo :
 //            }
 //        }
-//        return res;
+        return res;
     }
 
 //    private native final int native_dequeueOutputBuffer(@NonNull BufferInfo info, long timeoutUs);
@@ -1029,16 +958,7 @@ final public class RKMediaCodec {
      * @throws RKMediaCodec.CodecException upon codec error.
      */
     public final void releaseOutputBuffer(int index, boolean render) {
-        throw new RuntimeException("Not Support!");
-//        BufferInfo info = null;
-//        synchronized(mBufferLock) {
-//            invalidateByteBuffer(mCachedOutputBuffers, index);
-//            mDequeuedOutputBuffers.remove(index);
-//            if (mHasSurface) {
-//                info = mDequeuedOutputInfos.remove(index);
-//            }
-//        }
-//        releaseOutputBuffer(index, render, false /* updatePTS */, 0 /* dummy */);
+        // do nothing
     }
 
     /**
@@ -1237,8 +1157,8 @@ final public class RKMediaCodec {
         }
     }
 
-    private ByteBuffer[] mCachedInputBuffers;
-    private ByteBuffer[] mCachedOutputBuffers;
+    //private ByteBuffer[] mCachedInputBuffers;
+    //private ByteBuffer[] mCachedOutputBuffers;
     private final BufferMap mDequeuedInputBuffers = new BufferMap();
     private final BufferMap mDequeuedOutputBuffers = new BufferMap();
     private final Map<Integer, BufferInfo> mDequeuedOutputInfos = new HashMap<Integer, BufferInfo>();
@@ -1246,12 +1166,12 @@ final public class RKMediaCodec {
 
 //    private final void invalidateByteBuffer(@Nullable ByteBuffer[] buffers, int index) {
 //        throw new RuntimeException("Not Support!");
-////        if (buffers != null && index >= 0 && index < buffers.length) {
-////            ByteBuffer buffer = buffers[index];
-////            if (buffer != null) {
-////                buffer.setAccessible(false);
-////            }
-////        }
+//        if (buffers != null && index >= 0 && index < buffers.length) {
+//            ByteBuffer buffer = buffers[index];
+//            if (buffer != null) {
+//                buffer.setAccessible(false);
+//            }
+//        }
 //    }
 //
 //    private final void validateInputByteBuffer(@Nullable ByteBuffer[] buffers, int index) {
@@ -1317,116 +1237,31 @@ final public class RKMediaCodec {
 
     private final void freeAllTrackedBuffers() {
         synchronized(mBufferLock) {
-            freeByteBuffers(mCachedInputBuffers);
-            freeByteBuffers(mCachedOutputBuffers);
-            mCachedInputBuffers = null;
-            mCachedOutputBuffers = null;
+            //freeByteBuffers(mCachedInputBuffers);
+            //freeByteBuffers(mCachedOutputBuffers);
+            //mCachedInputBuffers = null;
+            //mCachedOutputBuffers = null;
             mDequeuedInputBuffers.clear();
             mDequeuedOutputBuffers.clear();
         }
     }
 
-    private final void cacheBuffers(boolean input) {
-        throw new RuntimeException("Not Support!");
-//        ByteBuffer[] buffers = null;
-//        try {
-//            buffers = getBuffers(input);
-//            invalidateByteBuffers(buffers);
-//        } catch (IllegalStateException e) {
-//            // we don't get buffers in async mode
-//        }
-//        if (input) {
-//            mCachedInputBuffers = buffers;
-//        } else {
-//            mCachedOutputBuffers = buffers;
-//        }
-    }
-
-    /**
-     * Retrieve the set of input buffers.  Call this after start()
-     * returns. After calling this method, any ByteBuffers
-     * previously returned by an earlier call to this method MUST no
-     * longer be used.
-     *
-     * @deprecated Use the new {@link #getInputBuffer} method instead
-     * each time an input buffer is dequeued.
-     *
-     * <b>Note:</b> As of API 21, dequeued input buffers are
-     * automatically {@link java.nio.Buffer#clear cleared}.
-     *
-     * <em>Do not use this method if using an input surface.</em>
-     *
-     * @throws IllegalStateException if not in the Executing state,
-     *         or codec is configured in asynchronous mode.
-     * @throws RKMediaCodec.CodecException upon codec error.
-     */
     @NonNull
     public ByteBuffer[] getInputBuffers() {
-        if (mCachedInputBuffers == null) {
-            throw new IllegalStateException();
-        }
-        // FIXME: check codec status
-        return mCachedInputBuffers;
+        throw new RuntimeException("Not Support!");
+        //return mCachedInputBuffers;
     }
 
-    /**
-     * Retrieve the set of output buffers.  Call this after start()
-     * returns and whenever dequeueOutputBuffer signals an output
-     * buffer change by returning {@link
-     * #INFO_OUTPUT_BUFFERS_CHANGED}. After calling this method, any
-     * ByteBuffers previously returned by an earlier call to this
-     * method MUST no longer be used.
-     *
-     * @deprecated Use the new {@link #getOutputBuffer} method instead
-     * each time an output buffer is dequeued.  This method is not
-     * supported if codec is configured in asynchronous mode.
-     *
-     * <b>Note:</b> As of API 21, the position and limit of output
-     * buffers that are dequeued will be set to the valid data
-     * range.
-     *
-     * <em>Do not use this method if using an output surface.</em>
-     *
-     * @throws IllegalStateException if not in the Executing state,
-     *         or codec is configured in asynchronous mode.
-     * @throws RKMediaCodec.CodecException upon codec error.
-     */
     @NonNull
     public ByteBuffer[] getOutputBuffers() {
-        if (mCachedOutputBuffers == null) {
-            throw new IllegalStateException();
-        }
-        // FIXME: check codec status
-        return mCachedOutputBuffers;
+        throw new RuntimeException("Not Support!");
+        //return mCachedOutputBuffers;
     }
 
-    /**
-     * Returns a {@link java.nio.Buffer#clear cleared}, writable ByteBuffer
-     * object for a dequeued input buffer index to contain the input data.
-     *
-     * After calling this method any ByteBuffer or Image object
-     * previously returned for the same input index MUST no longer
-     * be used.
-     *
-     * @param index The index of a client-owned input buffer previously
-     *              returned from a call to {@link #dequeueInputBuffer},
-     *              or received via an onInputBufferAvailable callback.
-     *
-     * @return the input buffer, or null if the index is not a dequeued
-     * input buffer, or if the codec is configured for surface input.
-     *
-     * @throws IllegalStateException if not in the Executing state.
-     * @throws RKMediaCodec.CodecException upon codec error.
-     */
     @Nullable
     public ByteBuffer getInputBuffer(int index) {
-        throw new RuntimeException("Not Support!");
-//        ByteBuffer newBuffer = getBuffer(true /* input */, index);
-//        synchronized(mBufferLock) {
-//            invalidateByteBuffer(mCachedInputBuffers, index);
-//            mDequeuedInputBuffers.put(index, newBuffer);
-//        }
-//        return newBuffer;
+        //return mCachedInputBuffers[index];
+        return native_getInputBuffer(mMppInstance, index);
     }
 
     /**
@@ -1832,8 +1667,6 @@ final public class RKMediaCodec {
 //        return MediaCodecList.getInfoFor(getName());
     }
 
-//    @NonNull
-//    private native final ByteBuffer[] getBuffers(boolean input);
 //
 //    @Nullable
 //    private native final ByteBuffer getBuffer(boolean input, int index);
@@ -1843,9 +1676,14 @@ final public class RKMediaCodec {
 //
 //    private static native final void native_init();
 //
-    private native final long native_create(@NonNull String name, boolean encoder);
-    private native final void native_configure(long mpp_instance);
-    private native final int  native_dequeueInputBuffer(long mpp_instance, long timeoutUS);
+
+    private native long native_create(@NonNull String name, boolean encoder);
+    private native void native_configure(long mpp_instance);
+    //private native ByteBuffer[] native_getBuffers(long mpp_instance, boolean input);
+    private native int  native_dequeueInputBuffer(long mpp_instance, long timeoutUS);
+    private native ByteBuffer native_getInputBuffer(long mpp_instance, int index);
+    private native void native_queueInputBuffer(long mpp_instance, int index, int offset, int size, long presentationTimeUs, int flags);
+    private native int native_dequeueOutputBuffer(long mpp_instance, long timeoutUs);
 
 //    private native final void native_finalize();
 
